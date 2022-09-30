@@ -304,6 +304,8 @@ void CAD_Init(uint8_t PortNum, USBPD_SettingsTypeDef *pSettings, USBPD_ParamsTyp
 #if defined(_SNK) || defined(_DRP)
   {
     USBPDM1_AssertRd(PortNum);
+
+    LL_SYSCFG_DisableDBATT(LL_SYSCFG_UCPD1_STROBE | LL_SYSCFG_UCPD2_STROBE);
 #if defined(TCPP0203_SUPPORT)
     /* Switch to Low Power mode */
     BSP_USBPD_PWR_SetPowerMode(PortNum, USBPD_PWR_MODE_LOWPOWER);
