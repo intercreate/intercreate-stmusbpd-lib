@@ -1,0 +1,30 @@
+
+config STM32_XCUBEUSBPD
+    bool "Enable USB PD libraries from STM"
+    default n
+    depends on CMSIS_RTOS_V1
+
+config STM32_XCUBEUSBPD_PORTNUM
+    int "Number of ports"
+    default 1
+    depends on STM32_XCUBEUSBPD
+
+choice STM32_XCUBEUSBPD_ROLE
+    bool "STM32 XCUBEUSBPD Port ROLE"
+    default STM32_XCUBEUSBPD_ROLE_SNK
+    depends on STM32_XCUBEUSBPD
+
+config STM32_XCUBEUSBPD_ROLE_SNK
+    bool "SNK"
+
+config STM32_XCUBEUSBPD_ROLE_SRC
+    bool "SRC"
+
+config STM32_XCUBEUSBPD_ROLE_DRP
+    bool "DRP"
+endchoice
+
+config STM32_XCUBEUSBPD_VDM
+    bool "Enable USB PD VDM support with STM32 XCube library"
+    default n
+    depends on STM32_XCUBEUSBPD
