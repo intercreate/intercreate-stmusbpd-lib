@@ -28,3 +28,14 @@ config STM32_XCUBEUSBPD_VDM
     bool "Enable USB PD VDM support with STM32 XCube library"
     default n
     depends on STM32_XCUBEUSBPD
+
+config USBPD_SNK_MAX_MV
+    int "Max allowed mV for a SNK application"
+    depends on STM32_XCUBEUSBPD
+    default 5000
+
+config USBPD_SNK_MAX_MW
+    int "Max allowed mW for a SNK application"
+    depends on STM32_XCUBEUSBPD
+    default 15000
+
