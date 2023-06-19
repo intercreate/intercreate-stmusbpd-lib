@@ -1443,7 +1443,7 @@ static uint32_t ManageStateAttachedWait_SRC(uint8_t PortNum, USBPD_CAD_EVENT *pE
 
   if ((_handle->CurrentHWcondition != HW_Detachment) && (_handle->CurrentHWcondition != HW_PwrCable_NoSink_Attachment))
   {
-    if (USBPD_FALSE == USBPD_PWR_IF_GetVBUSStatus(PortNum, USBPD_PWR_BELOWVSAFE0V))
+    if (USBPD_FALSE == USBPD_PWR_IF_GetVBUSStatus(PortNum, USBPD_PWR_VSAFE5V))
     {
       /* reset the timing because VBUS threshold not yet reach */
       _handle->CAD_tDebounce_start = HAL_GetTick();
