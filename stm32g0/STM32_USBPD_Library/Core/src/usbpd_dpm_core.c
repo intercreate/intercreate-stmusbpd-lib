@@ -415,7 +415,7 @@ error :
 uint32_t USBPD_DPM_InitOS(VOID *MemoryPtr)
 #else
 USBPD_StatusTypeDef USBPD_DPM_InitOS(void)
-#endif
+#endif /* USBPD_THREADX */
 {
   OS_INIT();
 #if defined(_RTOS) || defined(USBPD_THREADX)
@@ -436,6 +436,7 @@ USBPD_StatusTypeDef USBPD_DPM_InitOS(void)
   /* Create the queue corresponding to PE task */
   for (uint32_t index = 0; index < USBPD_PORT_COUNT; index++)
   {
+
     if (index == USBPD_PORT_0)
     {
         OS_CREATE_QUEUE(PEQueueId[index], QPE0, 1, OS_ELEMENT_SIZE);
@@ -464,7 +465,7 @@ USBPD_StatusTypeDef USBPD_DPM_InitOS(void)
 
 #if defined(_RTOS) || defined(USBPD_THREADX)
 error:
-#endif
+#endif /* _RTOS || USBPD_THREADX */
   return _retr;
 }
 
@@ -970,7 +971,7 @@ static void DPM_StartPETask(uint8_t PortNum)
       }
       else
       {
-          uint32_t portnumcast = PortNum;
+        uint32_t portnumcast = PortNum;
         OS_CREATE_TASK(DPM_PEThreadId_Table[PortNum], DO_NOT_USE, USBPD_PE_Task, OS_PE_PRIORITY, OS_PE_STACK_SIZE, portnumcast);
       }
       break;
@@ -982,7 +983,7 @@ static void DPM_StartPETask(uint8_t PortNum)
     }
   }
 error :
-   (void)_retr;
+  (void)_retr;
 #else
 #if defined(USE_STM32_UTILITY_OS)
   /* Resume the task */
