@@ -2760,8 +2760,10 @@ typedef union
   {
     USBPD_UsbSsSupport USB_HighestSpeed             : 3u;   /*!< USB Highest Speed Support                                 */
     USBPD_VDO_UFP_AlternateModes AlternateModes     : 3u;   /*!< Alternate Modes based                                     */
-    uint32_t                                        : 16u;  /*!< B21_6 Reserved bit                                        */
-    USBPD_ConnectorType_TypeDef ConnectorType       : 2u;   /*!< Connector Type                                            */
+    uint32_t VbusRequired                           : 1u;
+    uint32_t VConnRequired                          : 1u;
+    uint32_t VConnPower                             : 3u;
+    uint32_t                                        : 13u;  /*!< B21_6 Reserved bit                                        */
     USBPD_VDO_UFP_DeviceCapability DeviceCapability : 4u;   /*!< Device Capability                                         */
     uint32_t                                        : 1u;   /*!< B28 Reserved bit                                          */
     USBPD_VDM_VDO_UFP_Version_TypeDef UFPVDOVersion : 3u;   /*!< Version Number of the VDO (should be set to Version1.1)   */
