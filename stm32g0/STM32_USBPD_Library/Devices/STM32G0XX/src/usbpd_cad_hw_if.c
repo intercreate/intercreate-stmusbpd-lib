@@ -1443,19 +1443,21 @@ static uint32_t ManageStateAttachedWait_SRC(uint8_t PortNum, USBPD_CAD_EVENT *pE
 
   if ((_handle->CurrentHWcondition != HW_Detachment) && (_handle->CurrentHWcondition != HW_PwrCable_NoSink_Attachment))
   {
-    if (USBPD_FALSE == USBPD_PWR_IF_GetVBUSStatus(PortNum, USBPD_PWR_VSAFE5V))
+    if (_handle->CAD_tDebounce_flag == false)
     {
       /* reset the timing because VBUS threshold not yet reach */
       _handle->CAD_tDebounce_start = HAL_GetTick();
+      _handle->CAD_tDebounce_flag = true;
       return CAD_TCCDEBOUCE_THRESHOLD;
     }
 
     /* Check tCCDebounce */
-    if (CAD_tDebounce > CAD_TCCDEBOUCE_THRESHOLD)
+    if (CAD_tDebounce >= CAD_TCCDEBOUCE_THRESHOLD)
     {
       switch (_handle->CurrentHWcondition)
       {
         case HW_Attachment:
+          BSP_USBPD_PWR_VBUSOn(PortNum);
           HW_SignalAttachement(PortNum, _handle->cc);
           _handle->cstate = USBPD_CAD_STATE_ATTACHED;
           *pEvent = USBPD_CAD_EVENT_ATTACHED;
@@ -1494,11 +1496,10 @@ static uint32_t ManageStateAttachedWait_SRC(uint8_t PortNum, USBPD_CAD_EVENT *pE
 #endif /* _ACCESSORY_SRC */
           break;
       } /* end of switch */
+      _handle->CAD_tDebounce_flag = USBPD_FALSE;
       *pCCXX = _handle->cc;
       _timing = 2;
     }
-    /* reset the flag for CAD_tDebounce */
-    _handle->CAD_tDebounce_flag = USBPD_FALSE;
   }
   else /* CAD_HW_Condition[PortNum] = HW_Detachment */
   {
