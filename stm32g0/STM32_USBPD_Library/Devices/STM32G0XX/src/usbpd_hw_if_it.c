@@ -28,6 +28,9 @@
 #include "usbpd_timersserver.h"
 #endif /* _FRS */
 
+#include <zephyr/logging/log.h>
+LOG_MODULE_DECLARE(usbpd, LOG_LEVEL_INF);
+
 /* Private typedef -----------------------------------------------------------*/
 /* Private define ------------------------------------------------------------*/
 /* Private macro -------------------------------------------------------------*/
@@ -57,6 +60,8 @@ void PORTx_IRQHandler(uint8_t PortNum)
 
   if ((hucpd->IMR & _interrupt) != 0u)
   {
+      LOG_DBG("%d: %08x", PortNum, _interrupt);
+
     /* TXIS no need to enable it all the transfer are done by DMA */
     if (UCPD_SR_TXMSGDISC == (_interrupt & UCPD_SR_TXMSGDISC))
     {
