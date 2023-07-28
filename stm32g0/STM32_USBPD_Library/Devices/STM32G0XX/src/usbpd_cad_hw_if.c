@@ -1416,10 +1416,12 @@ static uint32_t ManageStateDetached_DRP(uint8_t PortNum)
         if ((HAL_GetTick() - _handle->CAD_tToggle_start) > Ports[PortNum].settings->CAD_SNKToggleTime)
         {
           _handle->CAD_tToggle_start = HAL_GetTick();
-          Ports[PortNum].params->PE_PowerRole = USBPD_PORTPOWERROLE_SRC;
-          Ports[PortNum].params->PE_DataRole = USBPD_PORTDATAROLE_DFP;
-          _timing = Ports[PortNum].settings->CAD_SRCToggleTime;
-          USBPDM1_AssertRp(PortNum);
+          if(USBPD_PWR_IF_HasSrcPower()) {
+              Ports[PortNum].params->PE_PowerRole = USBPD_PORTPOWERROLE_SRC;
+              Ports[PortNum].params->PE_DataRole = USBPD_PORTDATAROLE_DFP;
+              _timing = Ports[PortNum].settings->CAD_SRCToggleTime;
+              USBPDM1_AssertRp(PortNum);
+          }
         }
         break;
       default:
