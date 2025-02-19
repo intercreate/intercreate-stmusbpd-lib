@@ -6,12 +6,13 @@
   ******************************************************************************
   * @attention
   *
-  * Copyright (c) 2021 STMicroelectronics.
-  * All rights reserved.
+  * <h2><center>&copy; Copyright (c) 2017 STMicroelectronics.
+  * All rights reserved.</center></h2>
   *
-  * This software is licensed under terms that can be found in the LICENSE file
-  * in the root directory of this software component.
-  * If no LICENSE file comes with this software, it is provided AS-IS.
+  * This software component is licensed by ST under Ultimate Liberty license
+  * SLA0044, the "License"; You may not use this file except in compliance with
+  * the License. You may obtain a copy of the License at:
+  *                             www.st.com/SLA0044
   *
   ******************************************************************************
   */
@@ -24,7 +25,7 @@
 #include "usbpd_trace.h"
 #ifdef _TRACE
 #include "tracer_emb.h"
-#endif /* _TRACE */
+#endif
 
 /** @addtogroup STM32_USBPD_LIBRARY
   * @{
@@ -41,7 +42,7 @@
 /* Private enums -------------------------------------------------------------*/
 /* Private typedef -----------------------------------------------------------*/
 /* Private define ------------------------------------------------------------*/
-/** @defgroup USBPD_CORE_TRACE_Private_Defines USBPD CORE TRACE Private Defines
+/** @defgroup USBPD_CORE_TRACE_Private_Defines USBPD TRACE Private Defines
   * @{
   */
 
@@ -62,22 +63,21 @@
   */
 
 /* Private macro -------------------------------------------------------------*/
-/** @defgroup USBPD_CORE_TRACE_Private_Macros USBPD CORE TRACE Private Macros
+/** @defgroup USBPD_CORE_TRACE_Private_Macros USBPD TRACE Private Macros
   * @{
   */
-#define TRACE_SET_TAG_ID(_PORT_, _TAG_)         (((_PORT_) << TRACE_PORT_BIT_POSITION) | (_TAG_))
+#define __TRACE_SET_TAG_ID(_PORT_, _TAG_)  (((_PORT_) << TRACE_PORT_BIT_POSITION) | (_TAG_))
 
-#define TRACER_EMB_WRITE_DATA(_POSITION_,_DATA_)  do {                                        \
-                                                       TRACER_EMB_WriteData((_POSITION_),(_DATA_));\
-                                                       (_POSITION_) = ((_POSITION_) + 1u);         \
-                                                     } while(0)
+#define TRACER_EMB_WRITE_DATA(_POSITION_,_DATA_)  TRACER_EMB_WriteData((_POSITION_),(_DATA_));\
+                                                  (_POSITION_) = ((_POSITION_) + 1u);
+
 /**
   * @}
   */
 
 /* Private function prototypes -----------------------------------------------*/
 /* Private variables ---------------------------------------------------------*/
-/** @defgroup USBPD_CORE_TRACE_Private_Variables USBPD CORE TRACE Private Variables
+/** @defgroup USBPD_CORE_TRACE_Private_Variables USBPD TRACE Private Variables
   * @{
   */
 extern uint32_t HAL_GetTick(void);
@@ -88,37 +88,21 @@ extern void     USBPD_DPM_TraceWakeUp(void);
 
 /* Exported functions ---------------------------------------------------------*/
 
+
 /** @addtogroup USBPD_CORE_TRACE_Exported_Functions
   * @{
   */
 void USBPD_TRACE_Init(void)
 {
 #if defined(_TRACE)
-  static const uint8_t OverFlow_String[] =
-  {
-    TLV_SOF, TLV_SOF, TLV_SOF, TLV_SOF,   /* Buffer header */
-    0x32,                                 /* Tag id */
-    0x0, 0x18,                            /* Length */
-    0x6,                                  /* Type */
-    0x0, 0x0, 0x0, 0x0,                   /* Time   */
-    0x0,                                  /* PortNum */
-    0x0,                                  /* SOP */
-    0x0, 0x0F,                                                                 /* Size */
-    'T', 'R', 'A', 'C', 'E', ' ', 'O', 'V', 'E', 'R', '_', 'F', 'L', 'O', 'W', /* Data */
-    TLV_EOF, TLV_EOF, TLV_EOF, TLV_EOF                                         /* Buffer end */
-  };
-
   /* initialize tracer module */
   TRACER_EMB_Init();
 
   /* Initialize PE trace */
   USBPD_PE_SetTrace(USBPD_TRACE_Add, 3u);
-
-  /* Initialize the overflow detection */
-  (void)TRACER_EMB_EnableOverFlow(OverFlow_String, (uint8_t)sizeof(OverFlow_String));
 #else
   return;
-#endif /* _TRACE */
+#endif  
 }
 
 void USBPD_TRACE_DeInit(void)
@@ -127,78 +111,100 @@ void USBPD_TRACE_DeInit(void)
   return;
 }
 
-void  USBPD_TRACE_Add(TRACE_EVENT Type, uint8_t PortNum, uint8_t Sop, uint8_t *Ptr, uint32_t Size)
+void USBPD_TRACE_Add(TRACE_EVENT Type, uint8_t PortNum, uint8_t Sop, uint8_t *Ptr, uint32_t Size)
 {
 #if defined(_TRACE)
   uint32_t _time;
-  int32_t _allocation;
-  uint16_t index;
-
-  /*  Get trace timing */
-  _time = HAL_GetTick();
+  int32_t _writepos;
+  uint16_t _writepos2;
+  uint8_t *data_to_write;
+  uint32_t index;
+  uint32_t total_size;
 
   TRACER_EMB_Lock();
 
   /* Data are encapsulate inside a TLV string*/
   /* Allocate buffer Size */
-  _allocation = TRACER_EMB_AllocateBufer(Size + TRACE_SIZE_HEADER_TRACE +
-                                         TLV_HEADER_SIZE + TLV_SOF_SIZE + TLV_EOF_SIZE);
+  total_size = Size + TRACE_SIZE_HEADER_TRACE + TLV_HEADER_SIZE + TLV_SOF_SIZE + TLV_EOF_SIZE;
+  _writepos = TRACER_EMB_AllocateBufer(total_size);
 
   /* Check allocation */
-  if (_allocation  != -1)
+  if (_writepos  != -1)
   {
-    uint16_t _writepos = (uint16_t)_allocation;
+    _writepos2 = (uint16_t)_writepos;
+    data_to_write = Ptr;
 
     /* Copy SOF bytes */
     for (index = 0u; index < TLV_SOF_SIZE; index++)
     {
-      TRACER_EMB_WRITE_DATA(_writepos, TLV_SOF);
+      TRACER_EMB_WRITE_DATA(_writepos2, TLV_SOF);
     }
     /* Copy the TAG */
-    TRACER_EMB_WRITE_DATA(_writepos, TRACE_SET_TAG_ID((PortNum + 1u), DEBUG_STACK_MESSAGE));
+    TRACER_EMB_WRITE_DATA(_writepos2, __TRACE_SET_TAG_ID((PortNum + 1u), DEBUG_STACK_MESSAGE));
     /* Copy the LENGTH */
-    TRACER_EMB_WRITE_DATA(_writepos, (uint8_t)((Size + TRACE_SIZE_HEADER_TRACE) >> 8u));
-    TRACER_EMB_WRITE_DATA(_writepos, (uint8_t)(Size + TRACE_SIZE_HEADER_TRACE));
+    TRACER_EMB_WRITE_DATA(_writepos2, (uint8_t)((total_size - TLV_HEADER_SIZE - TLV_SOF_SIZE - TLV_EOF_SIZE) >> 8u));
+    TRACER_EMB_WRITE_DATA(_writepos2, (uint8_t)(total_size - TLV_HEADER_SIZE - TLV_SOF_SIZE - TLV_EOF_SIZE));
+    TRACER_EMB_WRITE_DATA(_writepos2, (uint8_t)Type);
 
-    /* Trace type */
-    TRACER_EMB_WRITE_DATA(_writepos, (uint8_t)Type);
+    _time = HAL_GetTick();
 
-    TRACER_EMB_WRITE_DATA(_writepos, (uint8_t)_time);
-    TRACER_EMB_WRITE_DATA(_writepos, (uint8_t)(_time >> 8u));
-    TRACER_EMB_WRITE_DATA(_writepos, (uint8_t)(_time >> 16u));
-    TRACER_EMB_WRITE_DATA(_writepos, (uint8_t)(_time >> 24u));
+    TRACER_EMB_WRITE_DATA(_writepos2, (uint8_t)_time);
+    TRACER_EMB_WRITE_DATA(_writepos2, (uint8_t)(_time >> 8u));
+    TRACER_EMB_WRITE_DATA(_writepos2, (uint8_t)(_time >> 16u));
+    TRACER_EMB_WRITE_DATA(_writepos2, (uint8_t)(_time >> 24u));
 
-    TRACER_EMB_WRITE_DATA(_writepos, PortNum);
-    TRACER_EMB_WRITE_DATA(_writepos, Sop);
+    TRACER_EMB_WRITE_DATA(_writepos2, PortNum);
+    TRACER_EMB_WRITE_DATA(_writepos2, Sop);
 
-    TRACER_EMB_WRITE_DATA(_writepos, (uint8_t)(Size >> 8u));
-    TRACER_EMB_WRITE_DATA(_writepos, (uint8_t)Size);
+    TRACER_EMB_WRITE_DATA(_writepos2, (uint8_t)(Size >> 8u));
+    TRACER_EMB_WRITE_DATA(_writepos2, (uint8_t)Size);
 
     /* initialize the Ptr for Read/Write */
     for (index = 0u; index < Size; index++)
     {
-      TRACER_EMB_WRITE_DATA(_writepos, Ptr[index]);
+      TRACER_EMB_WRITE_DATA(_writepos2, data_to_write[index]);
     }
 
     /* Copy EOF bytes */
     for (index = 0u; index < TLV_EOF_SIZE; index++)
     {
-      TRACER_EMB_WRITE_DATA(_writepos, TLV_EOF);
+      TRACER_EMB_WRITE_DATA(_writepos2, TLV_EOF);
     }
   }
 
   TRACER_EMB_UnLock();
-
-  TRACER_EMB_SendData();
+  
+  if (__get_IPSR() == 0 )
+  {
+    /* Wakeup the trace system, only for trace outside interrupt context */
+    USBPD_DPM_TraceWakeUp();
+  }
 #else
   return;
-#endif /* _TRACE */
+#endif  
+}
+
+uint32_t USBPD_TRACE_TX_Process(void)
+{
+#ifdef _TRACE  
+  return TRACER_EMB_TX_Process();
+#else
+  return 0xFFFFFFFF;
+#endif  
 }
 
 /**
   * @}
   */
 
+/** @defgroup USBPD_CORE_TRACE_Private_Functions USBPD TRACE Private Functions
+  * @{
+  */
+
+/**
+  * @}
+  */
+
 /**
   * @}
   */
@@ -210,4 +216,5 @@ void  USBPD_TRACE_Add(TRACE_EVENT Type, uint8_t PortNum, uint8_t Sop, uint8_t *P
 /**
   * @}
   */
+/************************ (C) COPYRIGHT STMicroelectronics *****END OF FILE****/
 

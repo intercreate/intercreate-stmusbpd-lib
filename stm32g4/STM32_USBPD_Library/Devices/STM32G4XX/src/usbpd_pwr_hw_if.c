@@ -6,12 +6,13 @@
   ******************************************************************************
   * @attention
   *
-  * Copyright (c) 2019 STMicroelectronics.
-  * All rights reserved.
+  * <h2><center>&copy; Copyright (c) 2018 STMicroelectronics.
+  * All rights reserved.</center></h2>
   *
-  * This software is licensed under terms that can be found in the LICENSE file
-  * in the root directory of this software component.
-  * If no LICENSE file comes with this software, it is provided AS-IS.
+  * This software component is licensed by ST under Ultimate Liberty license
+  * SLA0044, the "License"; You may not use this file except in compliance with
+  * the License. You may obtain a copy of the License at:
+  *                             www.st.com/SLA0044
   *
   ******************************************************************************
   */
@@ -24,7 +25,7 @@
 #if  defined(_TRACE)
 #include "usbpd_core.h"
 #include "usbpd_trace.h"
-#endif /* _TRACE */
+#endif
 
 /* Private typedef -----------------------------------------------------------*/
 /* Private define ------------------------------------------------------------*/
@@ -32,7 +33,7 @@
 #define POWER_DEBUG(__MSG__,__SIZE__)   USBPD_TRACE_Add(USBPD_TRACE_DEBUG, PortNum, 0,__MSG__,__SIZE__);
 #else
 #define POWER_DEBUG(__MSG__,__SIZE__)
-#endif /* _TRACE */
+#endif
 
 /* Private macro -------------------------------------------------------------*/
 /* Private variables ---------------------------------------------------------*/
@@ -60,8 +61,7 @@ int16_t HW_IF_PWR_GetCurrent(uint8_t PortNum)
 }
 
 #if defined(_SRC) || defined(_DRP)
-USBPD_StatusTypeDef HW_IF_PWR_Enable(uint8_t PortNum, USBPD_FunctionalState state, CCxPin_TypeDef Cc,
-                                     uint32_t VconnState, USBPD_PortPowerRole_TypeDef role)
+USBPD_StatusTypeDef HW_IF_PWR_Enable(uint8_t PortNum, USBPD_FunctionalState state, CCxPin_TypeDef Cc, uint32_t VconnState, USBPD_PortPowerRole_TypeDef role)
 {
   UNUSED(role);
   int32_t status;
@@ -104,3 +104,4 @@ USBPD_FunctionalState HW_IF_PWR_VBUSIsEnabled(uint8_t PortNum)
 #endif /* _SRC || _DRP */
 }
 
+/************************ (C) COPYRIGHT STMicroelectronics *****END OF FILE****/

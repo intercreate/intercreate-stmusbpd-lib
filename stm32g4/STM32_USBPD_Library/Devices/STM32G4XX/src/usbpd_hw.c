@@ -6,12 +6,13 @@
   ******************************************************************************
   * @attention
   *
-  * Copyright (c) 2019 STMicroelectronics.
-  * All rights reserved.
+  * <h2><center>&copy; Copyright (c) 2018 STMicroelectronics.
+  * All rights reserved.</center></h2>
   *
-  * This software is licensed under terms that can be found in the LICENSE file
-  * in the root directory of this software component.
-  * If no LICENSE file comes with this software, it is provided AS-IS.
+  * This software component is licensed by ST under Ultimate Liberty license
+  * SLA0044, the "License"; You may not use this file except in compliance with
+  * the License. You may obtain a copy of the License at:
+  *                             www.st.com/SLA0044
   *
   ******************************************************************************
   */
@@ -103,16 +104,18 @@ void USBPD_HW_SetFRSSignalling(uint8_t PortNum, uint8_t cc)
 {
   (void)PortNum;
 
-  /* Configure FRSTX GPIO */
+  /* Configure the GPIO with the AF corresponding to UCPD */
   if (1u == cc)
   {
-    /* FRS_TX common */
+    /* FRS_TX1 PA2 (CC1) */
     UCPDFRS_INSTANCE0_FRSCC1;
   }
   else
   {
-    /* FRS_TX common */
+    /* FRS_TX2 PB0 (CC2) */
     UCPDFRS_INSTANCE0_FRSCC2;
   }
 }
+
+/************************ (C) COPYRIGHT STMicroelectronics *****END OF FILE****/
 
