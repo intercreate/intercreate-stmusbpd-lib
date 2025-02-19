@@ -27,7 +27,7 @@ extern "C" {
 #include "tx_api.h"
 #else
 #if defined(_RTOS)
-#include "cmsis_os.h"
+#include "zephyr/portability/cmsis_os.h"
 #if (osCMSIS >= 0x20000U)
 #include "task.h"
 #endif /* osCMSIS >= 0x20000U */

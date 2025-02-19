@@ -78,8 +78,12 @@ extern "C" {
 
 /* Macros for integer division with various rounding variants default integer
    division rounds down. */
+#ifndef MIN
 #define MIN(a, b)  (((a) < (b)) ? (a) : (b))
+#endif
+#ifndef MAX
 #define MAX(a, b)  (((a) > (b)) ? (a) : (b))
+#endif
 
 #define USBPD_WRITE32(addr,data)                                                   \
   do {                                                                             \

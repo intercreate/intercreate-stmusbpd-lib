@@ -959,7 +959,6 @@ uint32_t CAD_StateMachine(uint8_t PortNum, USBPD_CAD_EVENT *pEvent, CCxPin_TypeD
       }
 #endif /* !_LOW_POWER && !USBPDM1_VCC_FEATURE_ENABLED */
 
-      UCPD_INSTANCE0_ENABLEIRQ;
 #if defined(_DRP) || defined(_ACCESSORY_SNK)
       _handle->CAD_tToggle_start = HAL_GetTick();
 #endif /* _DRP || _ACCESSORY_SNK */
@@ -1391,10 +1390,10 @@ static uint32_t ManageStateDetached_DRP(uint8_t PortNum)
         if ((HAL_GetTick() - _handle->CAD_tToggle_start) > Ports[PortNum].settings->CAD_SNKToggleTime)
         {
           _handle->CAD_tToggle_start = HAL_GetTick();
-          Ports[PortNum].params->PE_PowerRole = USBPD_PORTPOWERROLE_SRC;
-          Ports[PortNum].params->PE_DataRole = USBPD_PORTDATAROLE_DFP;
+          Ports[PortNum].params->PE_PowerRole = USBPD_PORTPOWERROLE_SNK;
+          Ports[PortNum].params->PE_DataRole = USBPD_PORTDATAROLE_UFP;
           _timing = Ports[PortNum].settings->CAD_SRCToggleTime;
-          USBPDM1_AssertRp(PortNum);
+          USBPDM1_AssertRd(PortNum);
         }
         break;
       default:
