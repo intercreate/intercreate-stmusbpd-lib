@@ -94,19 +94,19 @@ void TimerPE1function(void *pArg);
 
 #define OS_PE_PRIORITY                    osPriorityAboveNormal
 #if defined(_VDM)
-#define OS_PE_STACK_SIZE                  (350 * DPM_STACK_SIZE_ADDON_FOR_CMSIS)
+#define OS_PE_STACK_SIZE                  (2048 * DPM_STACK_SIZE_ADDON_FOR_CMSIS)
 #elif defined(__AUTHENTICATION__)
-#define OS_PE_STACK_SIZE                  (350 * DPM_STACK_SIZE_ADDON_FOR_CMSIS)
+#define OS_PE_STACK_SIZE                  (2048 * DPM_STACK_SIZE_ADDON_FOR_CMSIS)
 #else
-#define OS_PE_STACK_SIZE                  (200 * DPM_STACK_SIZE_ADDON_FOR_CMSIS)
+#define OS_PE_STACK_SIZE                  (2048 * DPM_STACK_SIZE_ADDON_FOR_CMSIS)
 #endif /*_VDM*/
 
 #if defined(USBPD_TCPM_MODULE_ENABLED)
 #define OS_ALERT_PRIORITY                 osPriorityRealtime
-#define OS_ALERT_STACK_SIZE               (240 * DPM_STACK_SIZE_ADDON_FOR_CMSIS)
+#define OS_ALERT_STACK_SIZE               (2048 * DPM_STACK_SIZE_ADDON_FOR_CMSIS)
 #endif /* USBPD_TCPM_MODULE_ENABLED */
 #define OS_CAD_PRIORITY                   osPriorityRealtime
-#define OS_CAD_STACK_SIZE                 (300 * DPM_STACK_SIZE_ADDON_FOR_CMSIS)
+#define OS_CAD_STACK_SIZE                 (2048 * DPM_STACK_SIZE_ADDON_FOR_CMSIS)
 
 #if defined(USBPD_TCPM_MODULE_ENABLED)
 OS_DEFINE_TASK(ALERT, USBPD_ALERT_Task, OS_ALERT_PRIORITY, OS_ALERT_STACK_SIZE, NULL);
@@ -421,12 +421,12 @@ USBPD_StatusTypeDef USBPD_DPM_InitOS(void)
 #if defined(_RTOS) || defined(USBPD_THREADX)
 #if defined(USBPD_TCPM_MODULE_ENABLED)
   {
-    OS_CREATE_QUEUE(AlarmMsgBox, "QAlarme", TCPM_ALARMBOX_MESSAGES_MAX, OS_ELEMENT_SIZE);
+    OS_CREATE_QUEUE(AlarmMsgBox, QAlarme, TCPM_ALARMBOX_MESSAGES_MAX, OS_ELEMENT_SIZE);
     OS_CREATE_TASK(ALAThread, ALERT, USBPD_ALERT_Task, OS_ALERT_PRIORITY, OS_ALERT_STACK_SIZE, ((int)NULL));
   }
 #else
   {
-    OS_CREATE_QUEUE(CADQueueId, "QCAD", USBPD_PORT_COUNT, OS_ELEMENT_SIZE);
+    OS_CREATE_QUEUE(CADQueueId, QCAD, USBPD_PORT_COUNT, OS_ELEMENT_SIZE);
     OS_DEFINE_TASK(CAD, USBPD_CAD_Task, OS_CAD_PRIORITY, OS_CAD_STACK_SIZE, NULL);
     OS_CREATE_TASK(CADThread, CAD, USBPD_CAD_Task,  OS_CAD_PRIORITY, OS_CAD_STACK_SIZE, ((int)NULL));
   }
@@ -436,10 +436,9 @@ USBPD_StatusTypeDef USBPD_DPM_InitOS(void)
   /* Create the queue corresponding to PE task */
   for (uint32_t index = 0; index < USBPD_PORT_COUNT; index++)
   {
-    OS_CREATE_QUEUE(PEQueueId[index], "QPE", 1, OS_ELEMENT_SIZE);
-
     if (index == USBPD_PORT_0)
     {
+       OS_CREATE_QUEUE(PEQueueId[index], QPE0, 1, OS_ELEMENT_SIZE);
       /* Tasks definition */
       OS_DEFINE_TASK(PE_0, USBPD_PE_Task, OS_PE_PRIORITY,  OS_PE_STACK_SIZE,  USBPD_PORT_0);
       OS_CREATE_TASK(DPM_PEThreadId_Table[USBPD_PORT_0], PE_0, USBPD_PE_Task,
@@ -448,6 +447,7 @@ USBPD_StatusTypeDef USBPD_DPM_InitOS(void)
 #if USBPD_PORT_COUNT > 1
     if (index == USBPD_PORT_1)
     {
+       OS_CREATE_QUEUE(PEQueueId[index], QPE1, 1, OS_ELEMENT_SIZE);
       /* Tasks definition */
       OS_DEFINE_TASK(PE_1, USBPD_PE_Task, OS_PE_PRIORITY,  OS_PE_STACK_SIZE,  USBPD_PORT_1);
       OS_CREATE_TASK(DPM_PEThreadId_Table[USBPD_PORT_1], PE_1, USBPD_PE_Task,
@@ -684,10 +684,12 @@ void USBPD_DPM_TimerCounter(void)
   /* SysTick Handler now fully handled on CMSIS OS V2 side */
 #else
   /* check to avoid count before OSKernel Start */
+#if 0
   if (uxTaskGetNumberOfTasks() != 0u)
   {
     osSystickHandler();
   }
+#endif
 #endif /* osCMSIS >= 0x20000U */
 #endif /* _RTOS */
 }
@@ -968,8 +970,8 @@ static void DPM_StartPETask(uint8_t PortNum)
       }
       else
       {
-        OS_CREATE_TASK(DPM_PEThreadId_Table[PortNum], PE_0, USBPD_PE_Task, OS_PE_PRIORITY, OS_PE_STACK_SIZE,
-                       ((int)PortNum));
+        uint32_t portnumcast = PortNum;
+        OS_CREATE_TASK(DPM_PEThreadId_Table[PortNum], DO_NOT_USE, USBPD_PE_Task, OS_PE_PRIORITY, OS_PE_STACK_SIZE, portnumcast);
       }
       break;
     }

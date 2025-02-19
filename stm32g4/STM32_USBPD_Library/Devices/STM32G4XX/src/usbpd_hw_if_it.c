@@ -44,6 +44,9 @@ void USBPD_PORT0_IRQHandler(void)
 void PORTx_IRQHandler(uint8_t PortNum)
 {
   UCPD_TypeDef *hucpd = Ports[PortNum].husbpd;
+  if(!hucpd) {
+      return;
+  }
   uint32_t _interrupt = LL_UCPD_ReadReg(hucpd, SR);
   static uint8_t ovrflag = 0;
 
