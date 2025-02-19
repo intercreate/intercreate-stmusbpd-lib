@@ -6,18 +6,17 @@
   ******************************************************************************
   * @attention
   *
-  * <h2><center>&copy; Copyright (c) 2017 STMicroelectronics.
-  * All rights reserved.</center></h2>
+  * Copyright (c) 2021 STMicroelectronics.
+  * All rights reserved.
   *
-  * This software component is licensed by ST under Ultimate Liberty license
-  * SLA0044, the "License"; You may not use this file except in compliance with
-  * the License. You may obtain a copy of the License at:
-  *                             www.st.com/SLA0044
+  * This software is licensed under terms that can be found in the LICENSE file
+  * in the root directory of this software component.
+  * If no LICENSE file comes with this software, it is provided AS-IS.
   *
   ******************************************************************************
   */
-#ifndef __USBPD_CORE_H_
-#define __USBPD_CORE_H_
+#ifndef USBPD_CORE_H_
+#define USBPD_CORE_H_
 
 #ifdef __cplusplus
 extern "C" {
@@ -47,7 +46,7 @@ extern "C" {
   */
 
 /**
-  * @brief funtion return value @ref USBPD_CORE_CAD
+  * @brief function return value @ref USBPD_CORE_CAD
   * @{
   */
 typedef enum
@@ -82,17 +81,17 @@ typedef enum
 typedef struct
 {
   /**
-  * @brief  CallBack used to report events to DPM.
-  * @param  PortNum The handle of the port
-  * @param  State   CAD state @ref USBPD_CAD_EVENT
-  * @param  Cc      The Communication Channel for the USBPD communication @ref CCxPin_TypeDef
-  * @retval None
-  */
+    * @brief  CallBack used to report events to DPM.
+    * @param  PortNum The handle of the port
+    * @param  State   CAD state @ref USBPD_CAD_EVENT
+    * @param  Cc      The Communication Channel for the USBPD communication @ref CCxPin_TypeDef
+    * @retval None
+    */
   void (*USBPD_CAD_CallbackEvent)(uint8_t PortNum, USBPD_CAD_EVENT State, CCxPin_TypeDef Cc);
   /**
-  * @brief  CallBack to wakeup the CAD.
-  * @retval None
-  */
+    * @brief  CallBack to wakeup the CAD.
+    * @retval None
+    */
   void (*USBPD_CAD_WakeUp)(void);
 } USBPD_CAD_Callbacks;
 
@@ -111,11 +110,12 @@ typedef struct
   * @param  Params            Pointer on @ref USBPD_ParamsTypeDef structure
   * @retval USBPD_CAD status
   */
-USBPD_CAD_StatusTypeDef USBPD_CAD_Init(uint8_t PortNum, const USBPD_CAD_Callbacks *CallbackFunctions, USBPD_SettingsTypeDef *Settings, USBPD_ParamsTypeDef *Params);
+USBPD_CAD_StatusTypeDef USBPD_CAD_Init(uint8_t PortNum, const USBPD_CAD_Callbacks *CallbackFunctions,
+                                       const USBPD_SettingsTypeDef *Settings, USBPD_ParamsTypeDef *Params);
 
 /**
   * @brief  function used to process type C state machine detection.
-  * @retval Timing in ms
+  * @retval time (in ms) after which the process must be executed
   */
 uint32_t                USBPD_CAD_Process(void);
 
@@ -128,14 +128,14 @@ uint32_t                USBPD_CAD_Process(void);
 void                    USBPD_CAD_PortEnable(uint8_t PortNum, USBPD_CAD_activation State);
 
 /**
-  * @brief  Set the resitor to present a SNK.
+  * @brief  Set the resistor to present a SNK.
   * @param  PortNum Index of current used port
   * @retval None
   */
 void                    USBPD_CAD_AssertRd(uint8_t PortNum);
 
 /**
-  * @brief  Set the resitor to present a SRC.
+  * @brief  Set the resistor to present a SRC.
   * @param  PortNum Index of current used port
   * @retval None
   */
@@ -148,13 +148,25 @@ void                    USBPD_CAD_AssertRp(uint8_t PortNum);
   */
 void                    USBPD_CAD_EnterErrorRecovery(uint8_t PortNum);
 
+#if defined(USBPDCORE_DRP) || defined(USBPDCORE_SRC)
 /**
-  * @brief  Set the default Rd resistor
+  * @brief  Set the default Rd resistor (valid for SRC only)
   * @param  PortNum Index of current used port
   * @param  RdValue
   * @retval USBPD_CAD_OK or USBPD_CAD_INVALIDRESISTOR
   */
+USBPD_CAD_StatusTypeDef USBPD_CAD_SRC_SetRpResistor(uint8_t PortNum, CAD_RP_Source_Current_Adv_Typedef RdValue);
+
+/** @defgroup USBPD_CORE_CAD_Exported_Functions_Legacy USBPD CORE CAD Legacy Function
+  * @{
+  */
+/* Keep for legacy reason */
 USBPD_CAD_StatusTypeDef USBPD_CAD_SetRpResistor(uint8_t PortNum, CAD_RP_Source_Current_Adv_Typedef RdValue);
+/**
+  * @}
+  */
+#endif /* USBPDCORE_DRP || USBPDCORE_SRC */
+
 /**
   * @}
   */
@@ -183,7 +195,13 @@ typedef enum
   USBPD_TRACE_SNK         = 8,
   USBPD_TRACE_NOTIF       = 9,
   USBPD_TRACE_POWER       = 10,
-  USBPD_TRACE_TCPM        = 11
+  USBPD_TRACE_TCPM        = 11,
+  USBPD_TRACE_PRL_STATE   = 12,
+  USBPD_TRACE_PRL_EVENT   = 13,
+  USBPD_TRACE_PHY_NOTFRWD = 14,
+  USBPD_TRACE_CPU         = 15,
+  USBPD_TRACE_TIMEOUT     = 16,
+  USBPD_TRACE_UCSI        = 18
 }
 TRACE_EVENT;
 
@@ -200,8 +218,73 @@ typedef void (*TRACE_ENTRY_POINT)(TRACE_EVENT type, uint8_t port, uint8_t sop, u
 /** @addtogroup USBPD_CORE_PE
   * @{
   */
+/** @defgroup USBPD_CORE_PE_Private_Defines USBPD CORE PE Private Defines
+  * @brief  These defines are used in the stack library. Just provided for information.
+  *         Those timers values are not to be changed by user (changing values on user side,
+  *         will not have any impacts on lib behavior).
+  * @{
+  *
+  */
 
-#if defined(USBPDCORE_SVDM) || defined(USBPDCORE_UVDM) || defined(USBPDCORE_VCONN_SUPPORT)
+/* Policy Engine Timers */
+#ifdef USBPDCORE_PPS
+#define PE_TPPSREQUEST                   9000u  /*!< tPPSRequest: Max value set to 10s                         */
+#define PE_TPPSTIMEOUT                   14000u /*!< tPPSTimeout: min 12s to max 15s                           */
+#endif /* USBPDCORE_PPS */
+#define PE_TPSHARDRESET                  27u    /*!< tPSHardReset: min 25ms to max 30ms                        */
+#define PE_SRC_TSRCRECOVER               800u   /*!< tSrcRecover for SRC: min 660 ms max 1s                    */
+#define PE_SNK_TSRCRECOVER               2000u  /*!< tSrcRecover for SNK: 2s (less restrictive for SINK tests) */
+#define PE_SRC_TSAFE0V_T2                650u   /*!< tSafe0V for SRC: 650 ms                                   */
+#define PE_SNK_TSAFE0V_T2                1000u  /*!< tSafe0V for SNK: 1000 ms                                  */
+#define PE_TSRCTURNON_T4                 275u   /*!< tSrcTurnOn: 275 ms                                        */
+#define PE_TPSSOURCEOFF                  900u   /*!< tPSSourceOff: min 750ms to max 920ms                      */
+#define PE_TPSSOURCEON                   470u   /*!< tPSSourceOn: min 390ms to max 480ms                       */
+
+#define PE_TPSTRANSITION                 500u   /*!< tPSTransition: min 450ms to max 550ms                     */
+
+#define PE_TSENDERRESPONSE               27u    /*!< tSenderResponse: min 24ms to max 30ms                     */
+
+#define PE_TTYPECSINKWAITCAP             500u   /*!< tTypeCSinkWaitCap: min 310ms to max 620ms                 */
+
+#define PE_TTYPECSENDSOURCECAPA          150u   /*!< tTypeCSendSourceCap: min 100ms to max 200ms               */
+#define PE_TSRCTRANSITION                30u    /*!< tSrcTransition: min 25ms to max 35ms                      */
+
+#define PE_TSWAPSRCSTART_MIN             20u    /*!< tSwapSourceStart: 20 ms                                   */
+
+#define PE_TBISTCONTMODE                 45u    /*!< tBISTContMode: min 30ms to 60 ms                          */
+#if defined(USBPDCORE_VCONN_SUPPORT)
+#define PE_TDISCOVERIDENTITY             45u    /*!< tDiscoverIdentity: min 40ms to max 50ms                   */
+#endif /* USBPDCORE_VCONN_SUPPORT */
+
+#define PE_TVDMSENDERRESPONSE            30u    /*!< tVDMSenderResponse: min 24ms to max 30ms                  */
+
+#if defined(USBPDCORE_SVDM) || defined(USBPDCORE_ANSWER_DISCOIDENT)
+#define PE_TVDMRECEIVERRESPONSE          15u    /*!< tVDMReceiverResponse: max 15ms                            */
+#endif /* USBPDCORE_SVDM || USBPDCORE_ANSWER_DISCOIDENT */
+#if defined(USBPDCORE_SVDM)
+#define PE_TVDMENTERMODE                 25u    /*!< tVDMEnterMode: max 25ms                                   */
+#define PE_TVDMEXITMODE                  25u    /*!< tVDMExitMode: max 25ms                                    */
+#endif /* USBPDCORE_SVDM */
+
+#if defined(USBPDCORE_SVDM) || defined(USBPDCORE_VCONN_SUPPORT)
+#define PE_TVDMWAITMODEENTRY             50u    /*!< tVDMWaitModeEntry: max 40ms to 50ms                       */
+#define PE_TVDMWAITMODEEXIT              50u    /*!< tVDMWaitModeExit: max 40ms to 50ms                        */
+#endif /* USBPDCORE_SVDM || USBPDCORE_VCONN_SUPPORT */
+
+#ifdef USBPDCORE_VCONN_SUPPORT
+#define PE_TVCONNSOURCETIMEOUT           150u   /*!< tVCONNSourceTimeout: min 100ms to max 200ms               */
+#endif /* USBPDCORE_VCONN_SUPPORT */
+
+
+#define PE_TVCONNZERO                    125u   /*!< tVCONNZero          :max 125ms                            */
+#define PE_TVCONNREAPPLIED                10u   /*!< tVCONNZero          :min 10 max 20ms                      */
+#define PE_TDATARESETFAIL                300u   /*!< tDataResetFail      :min 300ms                            */
+#define PE_TDATARESET                    200u   /*!< tDataReset          :min 200ms 225ms max 250ms            */
+/**
+  * @}
+  */
+
+#if defined(USBPDCORE_SVDM) || defined(USBPDCORE_UVDM) || defined(USBPDCORE_VCONN_SUPPORT) || defined(USBPDCORE_ANSWER_DISCOIDENT)
 /** @defgroup USBPD_CORE_VDM_Exported_Callback USBPD CORE VDM Exported Callback
   * @{
   */
@@ -211,7 +294,7 @@ typedef void (*TRACE_ENTRY_POINT)(TRACE_EVENT type, uint8_t port, uint8_t sop, u
   * */
 typedef struct
 {
-#if defined(USBPDCORE_SVDM) || defined(USBPDCORE_VCONN_SUPPORT)
+#if defined(USBPDCORE_SVDM) || defined(USBPDCORE_VCONN_SUPPORT) || defined(USBPDCORE_ANSWER_DISCOIDENT)
   /**
     * @brief  VDM Discovery identity callback
     * @note   Function is called to get Discovery identity information linked to the device and answer
@@ -221,7 +304,9 @@ typedef struct
     * @retval USBPD status: @ref USBPD_ACK or @ref USBPD_BUSY
     */
   USBPD_StatusTypeDef(*USBPD_VDM_DiscoverIdentity)(uint8_t PortNum, USBPD_DiscoveryIdentity_TypeDef *pIdentity);
+#endif /* USBPDCORE_SVDM || USBPDCORE_VCONN_SUPPORT || USBPDCORE_ANSWER_DISCOIDENT */
 
+#if defined(USBPDCORE_SVDM) || defined(USBPDCORE_VCONN_SUPPORT)
   /**
     * @brief  VDM Discover SVID callback
     * @note   Function is called to retrieve SVID supported by device and answer
@@ -243,7 +328,8 @@ typedef struct
     * @param  NumberOfMode Number of mode available
     * @retval USBPD status
     */
-  USBPD_StatusTypeDef(*USBPD_VDM_DiscoverModes)(uint8_t PortNum, uint16_t SVID, uint32_t **p_ModeTab, uint8_t *NumberOfMode);
+  USBPD_StatusTypeDef(*USBPD_VDM_DiscoverModes)(uint8_t PortNum,
+                                                uint16_t SVID, uint32_t **p_ModeTab, uint8_t *NumberOfMode);
 
   /**
     * @brief  VDM Mode enter callback
@@ -277,7 +363,9 @@ typedef struct
     * @param  pIdentity     Pointer on the discovery identity information based on @ref USBPD_DiscoveryIdentity_TypeDef
     * @retval None
     */
-  void (*USBPD_VDM_InformIdentity)(uint8_t PortNum, USBPD_SOPType_TypeDef SOPType, USBPD_VDM_CommandType_Typedef CommandStatus, USBPD_DiscoveryIdentity_TypeDef *pIdentity);
+  void (*USBPD_VDM_InformIdentity)(uint8_t PortNum, USBPD_SOPType_TypeDef SOPType,
+                                   USBPD_VDM_CommandType_Typedef CommandStatus,
+                                   USBPD_DiscoveryIdentity_TypeDef *pIdentity);
 
   /**
     * @brief  Inform SVID callback
@@ -289,7 +377,8 @@ typedef struct
     * @param  pListSVID     Pointer of list of SVID based on @ref USBPD_SVIDInfo_TypeDef
     * @retval None
     */
-  void (*USBPD_VDM_InformSVID)(uint8_t PortNum, USBPD_SOPType_TypeDef SOPType, USBPD_VDM_CommandType_Typedef CommandStatus, USBPD_SVIDInfo_TypeDef *pListSVID);
+  void (*USBPD_VDM_InformSVID)(uint8_t PortNum, USBPD_SOPType_TypeDef SOPType,
+                               USBPD_VDM_CommandType_Typedef CommandStatus, USBPD_SVIDInfo_TypeDef *pListSVID);
 
   /**
     * @brief  Inform Mode callback ( received in Discovery Modes ACK)
@@ -301,7 +390,8 @@ typedef struct
     * @param  pModesInfo      Pointer of Modes info based on @ref USBPD_ModeInfo_TypeDef
     * @retval None
     */
-  void (*USBPD_VDM_InformMode)(uint8_t PortNum, USBPD_SOPType_TypeDef SOPType, USBPD_VDM_CommandType_Typedef CommandStatus, USBPD_ModeInfo_TypeDef *pModesInfo);
+  void (*USBPD_VDM_InformMode)(uint8_t PortNum, USBPD_SOPType_TypeDef SOPType,
+                               USBPD_VDM_CommandType_Typedef CommandStatus, USBPD_ModeInfo_TypeDef *pModesInfo);
 
   /**
     * @brief  Inform Mode enter callback
@@ -314,7 +404,8 @@ typedef struct
     * @param  ModeIndex     Index of the mode to be entered
     * @retval None
     */
-  void (*USBPD_VDM_InformModeEnter)(uint8_t PortNum, USBPD_SOPType_TypeDef SOPType, USBPD_VDM_CommandType_Typedef CommandStatus, uint16_t SVID, uint32_t ModeIndex);
+  void (*USBPD_VDM_InformModeEnter)(uint8_t PortNum, USBPD_SOPType_TypeDef SOPType,
+                                    USBPD_VDM_CommandType_Typedef CommandStatus, uint16_t SVID, uint32_t ModeIndex);
 
   /**
     * @brief  Inform Mode exit callback
@@ -327,7 +418,8 @@ typedef struct
     * @param  ModeIndex     Index of the mode to be exited
     * @retval None
     */
-  void (*USBPD_VDM_InformModeExit)(uint8_t PortNum, USBPD_SOPType_TypeDef SOPType, USBPD_VDM_CommandType_Typedef CommandStatus, uint16_t SVID, uint32_t ModeIndex);
+  void (*USBPD_VDM_InformModeExit)(uint8_t PortNum, USBPD_SOPType_TypeDef SOPType,
+                                   USBPD_VDM_CommandType_Typedef CommandStatus, uint16_t SVID, uint32_t ModeIndex);
 
   /**
     * @brief  Send VDM Attention message callback
@@ -362,7 +454,8 @@ typedef struct
     * @param  pVDO       Pointer of VDO to send
     * @retval None
     */
-  void (*USBPD_VDM_SendSpecific)(uint8_t PortNum, USBPD_SOPType_TypeDef SOPType, USBPD_VDM_Command_Typedef VDMCommand, uint8_t *pNbData, uint32_t *pVDO);
+  void (*USBPD_VDM_SendSpecific)(uint8_t PortNum, USBPD_SOPType_TypeDef SOPType,
+                                 USBPD_VDM_Command_Typedef VDMCommand, uint8_t *pNbData, uint32_t *pVDO);
 
   /**
     * @brief  VDM Receive Specific message callback
@@ -374,7 +467,9 @@ typedef struct
     * @param  pVDO        Pointer of received VDO and use for the answer
     * @retval USBPD Status
     */
-  USBPD_StatusTypeDef(*USBPD_VDM_ReceiveSpecific)(uint8_t PortNum, USBPD_VDM_Command_Typedef VDMCommand, uint8_t *pNbData, uint32_t *pVDO);
+  USBPD_StatusTypeDef(*USBPD_VDM_ReceiveSpecific)(uint8_t PortNum,
+                                                  USBPD_VDM_Command_Typedef VDMCommand,
+                                                  uint8_t *pNbData, uint32_t *pVDO);
 
   /**
     * @brief  VDM Specific message callback to inform user of reception of VDM specific message
@@ -387,7 +482,8 @@ typedef struct
     * @param  pVDO       Pointer of received VDO
     * @retval None
     */
-  void (*USBPD_VDM_InformSpecific)(uint8_t PortNum, USBPD_SOPType_TypeDef SOPType, USBPD_VDM_Command_Typedef VDMCommand, uint8_t *pNbData, uint32_t *pVDO);
+  void (*USBPD_VDM_InformSpecific)(uint8_t PortNum, USBPD_SOPType_TypeDef SOPType,
+                                   USBPD_VDM_Command_Typedef VDMCommand, uint8_t *pNbData, uint32_t *pVDO);
 
 #endif /* USBPDCORE_SVDM || USBPDCORE_VCONN_SUPPORT */
 #if defined(USBPDCORE_UVDM)
@@ -399,7 +495,8 @@ typedef struct
     * @param  pVDO          Pointer of VDO to send
     * @retval None
     */
-  void (*USBPD_VDM_SendUVDM)(uint8_t PortNum, USBPD_UVDMHeader_TypeDef *pUVDM_Header, uint8_t *pNbData, uint32_t *pVDO);
+  void (*USBPD_VDM_SendUVDM)(uint8_t PortNum, USBPD_UVDMHeader_TypeDef *pUVDM_Header,
+                             uint8_t *pNbData, uint32_t *pVDO);
 
   /**
     * @brief  Unstructured VDM  message callback to inform user of reception of UVDM message
@@ -409,7 +506,8 @@ typedef struct
     * @param  pVDO       Pointer of received VDO
     * @retval USBPD Status
     */
-  USBPD_StatusTypeDef(*USBPD_VDM_ReceiveUVDM)(uint8_t PortNum, USBPD_UVDMHeader_TypeDef UVDM_Header, uint8_t *pNbData, uint32_t *pVDO);
+  USBPD_StatusTypeDef(*USBPD_VDM_ReceiveUVDM)(uint8_t PortNum,
+                                              USBPD_UVDMHeader_TypeDef UVDM_Header, uint8_t *pNbData, uint32_t *pVDO);
 #endif /* USBPDCORE_UVDM */
 } USBPD_VDM_Callbacks;
 
@@ -417,14 +515,14 @@ typedef struct
   * @}
   */
 
-#endif /* USBPDCORE_SVDM || USBPDCORE_UVDM || USBPDCORE_VCONN_SUPPORT */
+#endif /* USBPDCORE_SVDM || USBPDCORE_UVDM || USBPDCORE_VCONN_SUPPORT || USBPDCORE_ANSWER_DISCOIDENT */
 
 /** @defgroup USBPD_CORE_PE_Exported_TypesDefinitions USBPD CORE PE Exported Types Definitions
   * @{
   */
 
 /** @defgroup PE_CallBacks_structure_definition PE CallBacks structure definition
-  * @brief  PE CallBacks exposed by the PE to the  DMP
+  * @brief  PE CallBacks exposed by the PE to the DPM
   * @{
   */
 typedef struct
@@ -434,7 +532,7 @@ typedef struct
     * @note   this callback is mandatory for a SRC and DRP.
     * @param  PortNum Port number
     * @retval Returned values are: @ref USBPD_ACCEPT, @ref USBPD_REJECT, @ref USBPD_WAIT
-  */
+    */
   USBPD_StatusTypeDef(*USBPD_PE_RequestSetupNewPower)(uint8_t PortNum);
 
   /**
@@ -443,7 +541,7 @@ typedef struct
     * @param  Role of the board @ref USBPD_PortPowerRole_TypeDef
     * @param  Status HR Status @ref USBPD_HR_Status_TypeDef
     * @retval None
-  */
+    */
   void (*USBPD_PE_HardReset)(uint8_t PortNum, USBPD_PortPowerRole_TypeDef CurrentRole, USBPD_HR_Status_TypeDef Status);
 
   /**
@@ -451,7 +549,7 @@ typedef struct
     * @note   if the callback is NULL, the request power role swap are automatically rejected.
     * @param  PortNum Port number
     * @retval Returned values are: @ref USBPD_ACCEPT, @ref USBPD_WAIT, @ref USBPD_REJECT
-  */
+    */
   USBPD_StatusTypeDef(*USBPD_PE_EvaluatPRSwap)(uint8_t PortNum);
 
   /**
@@ -471,30 +569,31 @@ typedef struct
     * @param  DataSize size of the data
     * @retval None
     */
-  void (*USBPD_PE_ExtendedMessage)(uint8_t PortNum, USBPD_ExtendedMsg_TypeDef MsgId, uint8_t *ptrData, uint16_t DataSize);
+  void (*USBPD_PE_ExtendedMessage)(uint8_t PortNum,
+                                   USBPD_ExtendedMsg_TypeDef MsgId, uint8_t *ptrData, uint16_t DataSize);
 
   /**
-    * @brief  Callbakc used by the stack to get information from DPM or PWR_IF.
+    * @brief  Callback used by the stack to get information from DPM or PWR_IF.
     * @param  PortNum Port number
     * @param  DataId Type of data to be read from DPM based on @ref USBPD_CORE_DataInfoType_TypeDef
     * @param  Ptr Pointer on address where DPM data should be written (u8 pointer)
     * @param  Size Pointer on nb of bytes written by DPM
     * @retval None
     */
-  void (*USBPD_PE_GetDataInfo)(uint8_t PortNum, USBPD_CORE_DataInfoType_TypeDef DataId , uint8_t *Ptr, uint32_t *Size);
+  void (*USBPD_PE_GetDataInfo)(uint8_t PortNum, USBPD_CORE_DataInfoType_TypeDef DataId, uint8_t *Ptr, uint32_t *Size);
 
   /**
-    * @brief  Callbakc used by the stack to set information inside DPM or PWR_IF.
+    * @brief  Callback used by the stack to set information inside DPM or PWR_IF.
     * @param  PortNum Port number
     * @param  DataId Type of data to be read from DPM based on @ref USBPD_CORE_DataInfoType_TypeDef
     * @param  Ptr Pointer on address where DPM data to be updated could be read (u8 pointer)
     * @param  Size Nb of byte to be updated in DPM
     * @retval None
     */
-  void (*USBPD_PE_SetDataInfo)(uint8_t PortNum, USBPD_CORE_DataInfoType_TypeDef DataId , uint8_t *Ptr, uint32_t Size);
+  void (*USBPD_PE_SetDataInfo)(uint8_t PortNum, USBPD_CORE_DataInfoType_TypeDef DataId, uint8_t *Ptr, uint32_t Size);
 
   /**
-    * @brief  Callback used by a SOURCE to evluate the SINK request
+    * @brief  Callback used by a SOURCE to evaluate the SINK request
     * @param  PortNum Port number
     * @param  PtrPowerObject  Pointer on the power data object
     * @retval Returned values are: @ref USBPD_ACCEPT, @ref USBPD_REJECT, @ref USBPD_WAIT, @ref USBPD_GOTOMIN
@@ -509,7 +608,8 @@ typedef struct
     * @param  PtrPowerObject  Pointer on selected power data object
     * @retval None
     */
-  void (*USBPD_PE_SNK_EvaluateCapabilities)(uint8_t PortNum, uint32_t *RequestData, USBPD_CORE_PDO_Type_TypeDef *PtrPowerObject);
+  void (*USBPD_PE_SNK_EvaluateCapabilities)(uint8_t PortNum, uint32_t *RequestData,
+                                            USBPD_CORE_PDO_Type_TypeDef *PtrPowerObject);
 
   /**
     * @brief  Callback used during the different step of the power role swap
@@ -519,7 +619,8 @@ typedef struct
     * @param  Status HR Status update @ref USBPD_PRS_Status_TypeDef
     * @retval None
     */
-  void (*USBPD_PE_PowerRoleSwap)(uint8_t PortNum, USBPD_PortPowerRole_TypeDef CurrentRole, USBPD_PRS_Status_TypeDef Status);
+  void (*USBPD_PE_PowerRoleSwap)(uint8_t PortNum, USBPD_PortPowerRole_TypeDef CurrentRole,
+                                 USBPD_PRS_Status_TypeDef Status);
 
   /**
     * @brief  Callback used to wakeup the current state machine
@@ -556,7 +657,10 @@ typedef struct
     * @brief  Callback used to ask application the reply status for a DataRoleSwap request
     * @note   if the callback is not set (ie NULL) the stack will automatically reject the request
     * @param  PortNum Port number
-    * @retval Returned values are: @ref USBPD_REJECT, @ref USBPD_ACCEPT
+    * @retval Returned values are:
+              @ref USBPD_ACCEPT if DRS can be accepted
+              @ref USBPD_REJECT if DRS is not accepted in one data role (DFP or UFP) or in PD2.0 config
+              @ref USBPD_NOTSUPPORTED if DRS is not supported at all by the application (in both data roles) - P3.0 only
     */
   USBPD_StatusTypeDef(*USBPD_PE_DataRoleSwap)(uint8_t PortNum);
 
@@ -568,6 +672,7 @@ typedef struct
     * @retval Returned values are: @ref USBPD_DISABLE or @ref USBPD_ENABLE
     */
   USBPD_FunctionalState(*USBPD_PE_IsPowerReady)(uint8_t PortNum, USBPD_VSAFE_StatusTypeDef Vsafe);
+
 
 } USBPD_PE_Callbacks;
 
@@ -593,13 +698,20 @@ typedef struct
   * @param  pSettings   Pointer on @ref USBPD_SettingsTypeDef structure
   * @param  pParams     Pointer on @ref USBPD_ParamsTypeDef structure
   * @param  PECallbacks Callback function to be passed to PRL layer
-  * @retval USBPD status @ref USBPD_OK or @ref USBPD_ERROR
+  * @retval USBPD status Possible values are
+                          - @ref USBPD_OK
+                          - @ref USBPD_ERROR
+                          - @ref USPD_ERROR_CALLBACKMISSING
+                          - @ref USBPD_INVALID_PORT_NUMBER
+                          - @ref USBPD_MALLOCERROR
   */
-USBPD_StatusTypeDef USBPD_PE_Init(uint8_t PortNum, USBPD_SettingsTypeDef *pSettings, USBPD_ParamsTypeDef *pParams, const USBPD_PE_Callbacks *PECallbacks);
+USBPD_StatusTypeDef USBPD_PE_Init(uint8_t PortNum, USBPD_SettingsTypeDef *pSettings, USBPD_ParamsTypeDef *pParams,
+                                  const USBPD_PE_Callbacks *PECallbacks);
+
 
 /**
   * @brief  Check coherence between lib selected and the lib include inside the project
-  * @note   This function can be used only during developpment process to avoid mismatch
+  * @note   This function can be used only during development process to avoid mismatch
   * @param  LibId    Value fix defined with the switch lib.
   * @retval if the check is OK @ref USBPD_TRUE else @ref USBPD_FALSE
   */
@@ -607,7 +719,7 @@ uint32_t            USBPD_PE_CheckLIB(uint32_t LibId);
 
 /**
   * @brief  Return the need of the stack in terms of dynamique allocation
-  * @note   the value returned corresponds to the allocationt need for 2 ports so if application manage
+  * @note   the value returned corresponds to the allocation need for 2 ports so if application manages
   *         only one port the need is be divided by 2
   * @retval Memory size
   */
@@ -615,7 +727,7 @@ uint32_t            USBPD_PE_GetMemoryConsumption(void);
 
 /**
   * @brief  Set the trace pointer and the debug level
-  * @note   the recommanded value for debug trace level is 0x3
+  * @note   the recommended value for debug trace level is 0x3
   *              0x1 : Policy engine state
   *              0x2 : Notification
   *              0x3 : Policy engine state + Notification
@@ -625,23 +737,16 @@ uint32_t            USBPD_PE_GetMemoryConsumption(void);
   */
 void                USBPD_PE_SetTrace(TRACE_ENTRY_POINT Ptr, uint8_t Debug);
 
-#if defined(USBPDCORE_SRC) || defined(USBPDCORE_DRP)
 /**
-  * @brief  Policy Engine Source state machine
+  * @brief  Notification function
+  * @note this function is used by DPM_CORE or the stack to inform the user DPM application
   * @param  PortNum Index of current used port
-  * @retval Timing in ms
+  * @param  EventVal event based on @ref USBPD_NotifyEventValue_TypeDef
+  * @retval None
   */
-uint32_t            USBPD_PE_StateMachine_SRC(uint8_t PortNum);
-#endif /* USBPDCORE_SRC || USBPDCORE_DRP */
+void                USBPD_PE_Notification(uint8_t PortNum, USBPD_NotifyEventValue_TypeDef EventVal);
 
-#if defined(USBPDCORE_SNK) || defined(USBPDCORE_DRP)
-/**
-  * @brief  Policy Engine Sink state machine
-  * @param  PortNum Index of current used port
-  * @retval Timing in ms
-  */
-uint32_t            USBPD_PE_StateMachine_SNK(uint8_t PortNum);
-#endif /* USBPDCORE_SNK || USBPDCORE_DRP */
+
 
 #ifdef USBPDCORE_DRP
 /**
@@ -659,38 +764,85 @@ uint32_t            USBPD_PE_StateMachine_DRP(uint8_t PortNum);
   * @retval Timing in ms
   */
 uint32_t USBPD_PE_StateMachine_SNKwVPD(uint8_t PortNum);
-#endif /* USBPDCORE_DRP */
+#endif /* USBPDCORE_VPD && USBPDCORE_SNK */
+
+/**
+  * @brief  Function called by DPM to before calling the state machine.
+  * @param  PortNum     Index of current used port
+  * @retval none
+  */
+void USBPD_PE_StateMachine_Reset(uint8_t PortNum);
+
+/**
+  * @brief  Function called by DPM to exit the state machine.
+  * @param  PortNum     Index of current used port
+  * @retval none
+  */
+void USBPD_PE_StateMachine_Stop(uint8_t PortNum);
 
 /**
   * @brief  Function called by DPM to set the cable status connected or disconnected.
   * @param  PortNum     Index of current used port
   * @param  IsConnected Cable connection status: 1 if connected and 0 is disconnected
   * @retval USBPD status @ref USBPD_OK
+  * @note this function is obsolete the connection information are managed at cad level
   */
-USBPD_StatusTypeDef USBPD_PE_IsCableConnected(uint8_t PortNum, uint8_t IsConnected);
+void USBPD_PE_IsCableConnected(uint8_t PortNum, uint8_t IsConnected);
 
 /**
   * @brief  Increment PE Timers tick
-  * @note   This function must be called each elasped ms
+  * @note   This function must be called each elapsed ms
   * @param  PortNum Index of current used port
   * @retval None
   */
-void                USBPD_PE_TimerCounter(uint8_t PortNum);
+void USBPD_PE_TimerCounter(uint8_t PortNum);
 
 /**
   * @brief  Update PE Timers tick
   * @note   This function must be called when exited the low power mode
   * @param  PortNum Index of current used port
-  * @param  Tick value in ms
+  * @param  Tick value in ms (can't execed the value 0x.... else the value will not be take into account)
   * @retval None
   */
-void                USBPD_PE_TimerCounteUpdate(uint8_t PortNum, uint32_t Tick);
+void USBPD_PE_TimerCounteUpdate(uint8_t PortNum, uint16_t Tick);
 
 /**
   * @}
   */
 
-#if defined(USBPDCORE_SVDM) || defined(USBPDCORE_UVDM) || defined(USBPDCORE_VCONN_SUPPORT)
+#if defined(USBPDCORE_SRC) || defined(USBPDCORE_DRP)
+/** @defgroup USBPD_CORE_SRC_Exported_Functions_Group1 USBPD CORE PE SRC Exported Functions to DPM CORE
+  * @{
+  */
+/**
+  * @brief  Policy Engine Source state machine
+  * @param  PortNum Index of current used port
+  * @retval Timing in ms
+  */
+uint32_t            USBPD_PE_StateMachine_SRC(uint8_t PortNum);
+
+/**
+  * @}
+  */
+#endif /* USBPDCORE_SRC || USBPDCORE_DRP */
+
+#if defined(USBPDCORE_SNK) || defined(USBPDCORE_DRP)
+/** @defgroup USBPD_CORE_PE_SNK_Exported_Functions_Group1 USBPD CORE PE SNK Exported Functions to DPM CORE
+  * @{
+  */
+/**
+  * @brief  Policy Engine Sink state machine
+  * @param  PortNum Index of current used port
+  * @retval Timing in ms
+  */
+uint32_t            USBPD_PE_StateMachine_SNK(uint8_t PortNum);
+
+/**
+  * @}
+  */
+#endif /* USBPDCORE_SNK || USBPDCORE_DRP */
+
+#if defined(USBPDCORE_SVDM) || defined(USBPDCORE_UVDM) || defined(USBPDCORE_VCONN_SUPPORT) || defined(USBPDCORE_ANSWER_DISCOIDENT)
 /** @defgroup USBPD_CORE_PE_Exported_Functions_Group2 USBPD CORE PE Exported Functions to VDM USER
   * @{
   */
@@ -700,11 +852,11 @@ void                USBPD_PE_TimerCounteUpdate(uint8_t PortNum, uint32_t Tick);
   * @param  VDMCallbacks  Pointer on VDM callbacks based on @ref USBPD_VDM_Callbacks
   * @retval None
   */
-void                USBPD_PE_InitVDM_Callback(uint8_t PortNum, USBPD_VDM_Callbacks *VDMCallbacks);
+void USBPD_PE_InitVDM_Callback(uint8_t PortNum, USBPD_VDM_Callbacks *VDMCallbacks);
 /**
   * @}
   */
-#endif /* USBPDCORE_SVDM || USBPDCORE_UVDM || USBPDCORE_VCONN_SUPPORT*/
+#endif /* USBPDCORE_SVDM || USBPDCORE_UVDM || USBPDCORE_VCONN_SUPPORT || USBPDCORE_ANSWER_DISCOIDENT */
 
 /** @defgroup USBPD_CORE_PE_Exported_Functions_Group3 USBPD CORE PE Exported Functions to DPM USER
   * @{
@@ -717,11 +869,13 @@ void                USBPD_PE_InitVDM_Callback(uint8_t PortNum, USBPD_VDM_Callbac
   * @param  SOPType   SOP Type based on @ref USBPD_SOPType_TypeDef
   * @retval status    @ref USBPD_OK, @ref USBPD_BUSY, @ref USBPD_ERROR or @ref USBPD_FAIL
   */
-USBPD_StatusTypeDef USBPD_PE_Request_CtrlMessage(uint8_t PortNum, USBPD_ControlMsg_TypeDef CtrlMsg, USBPD_SOPType_TypeDef SOPType);
+USBPD_StatusTypeDef USBPD_PE_Request_CtrlMessage(uint8_t PortNum, USBPD_ControlMsg_TypeDef CtrlMsg,
+                                                 USBPD_SOPType_TypeDef SOPType);
 
 /**
   * @brief  This generic function is used to send data message
-  * @note   the parameter pData is used only if DataMsg is equal to USBPD_DATAMSG_ALERT or USBPD_DATAMSG_GET_COUNTRY_INFO
+  * @note   the parameter pData is used only if DataMsg is equal
+            to USBPD_DATAMSG_ALERT or USBPD_DATAMSG_GET_COUNTRY_INFO
   * @param  PortNum   Index of current used port
   * @param  DataMsg   Data message id based on @ref USBPD_DataMsg_TypeDef
   * @param  pData     Pointer on the data to send
@@ -738,7 +892,8 @@ USBPD_StatusTypeDef USBPD_PE_Request_HardReset(uint8_t PortNum);
 
 /**
   * @brief  Request the PE to send a cable reset.
-  * @note   Only a DFP Shall generate Cable Reset Signaling. A DFP Shall only generate Cable Reset Signaling within an Explicit Contract.
+  * @note   Only a DFP Shall generate Cable Reset Signaling.
+            A DFP Shall only generate Cable Reset Signaling within an Explicit Contract.
             The DFP has to be supplying VCONN prior to a Cable Reset
   * @param  PortNum The current port number
   * @retval USBPD Status
@@ -757,10 +912,11 @@ USBPD_StatusTypeDef USBPD_PE_Send_Request(uint8_t PortNum, uint32_t Rdo, USBPD_C
 #endif /* USBPDCORE_SNK || USBPDCORE_DRP */
 
 #if defined(USBPD_REV30_SUPPORT)
-#if defined(USBPDCORE_BATTERY) || defined(USBPDCORE_MANU_INFO) || defined(USBPDCORE_SECURITY_MSG) || defined(USBPDCORE_FWUPD)
+#if defined(USBPDCORE_BATTERY) || defined(USBPDCORE_MANU_INFO) ||  \
+    defined(USBPDCORE_SECURITY_MSG) || defined(USBPDCORE_FWUPD)
 /**
   * @brief  This function send an extended message
-  * @note   The managment of chunk or unchunked message is manage inside the
+  * @note   The management of chunk or unchunked message is manage inside the
   * @param  PortNum      Port number value
   * @param  SOPType      Message type based on @ref USBPD_SOPType_TypeDef
   * @param  MessageType  Extended Msg type @ref USBPD_ExtendedMsg_TypeDef
@@ -768,8 +924,10 @@ USBPD_StatusTypeDef USBPD_PE_Send_Request(uint8_t PortNum, uint32_t Rdo, USBPD_C
   * @param  DataSize     Size of the data (<= 260)
   * @retval status       @ref USBPD_OK, @ref USBPD_BUSY, @ref USBPD_ERROR or @ref USBPD_FAIL
   */
-USBPD_StatusTypeDef USBPD_PE_SendExtendedMessage(uint8_t PortNum, USBPD_SOPType_TypeDef SOPType, USBPD_ExtendedMsg_TypeDef MessageType, uint8_t *Ptrdata, uint16_t DataSize);
-#endif
+USBPD_StatusTypeDef USBPD_PE_SendExtendedMessage(uint8_t PortNum, USBPD_SOPType_TypeDef SOPType,
+                                                 USBPD_ExtendedMsg_TypeDef MessageType,
+                                                 uint8_t *Ptrdata, uint16_t DataSize);
+#endif /* USBPDCORE_BATTERY || USBPDCORE_MANU_INFO || USBPDCORE_SECURITY_MSG || USBPDCORE_FWUPD */
 
 #if defined(USBPDCORE_FASTROLESWAP)
 /**
@@ -778,7 +936,7 @@ USBPD_StatusTypeDef USBPD_PE_SendExtendedMessage(uint8_t PortNum, USBPD_SOPType_
   * @retval None
   */
 void USBPD_PE_ExecFastRoleSwapSignalling(uint8_t PortNum);
-#endif
+#endif /* USBPDCORE_FASTROLESWAP */
 #endif /* USBPD_REV30_SUPPORT */
 
 #if defined(USBPDCORE_SVDM) || defined(USBPDCORE_VCONN_SUPPORT)
@@ -816,7 +974,8 @@ USBPD_StatusTypeDef USBPD_PE_SVDM_RequestMode(uint8_t PortNum, USBPD_SOPType_Typ
   * @param  ModeIndex Index of the mode to be entered
   * @retval USBPD status: @ref USBPD_BUSY, @ref USBPD_OK, @ref USBPD_FAIL
   */
-USBPD_StatusTypeDef USBPD_PE_SVDM_RequestModeEnter(uint8_t PortNum, USBPD_SOPType_TypeDef SOPType, uint16_t SVID, uint8_t ModeIndex);
+USBPD_StatusTypeDef USBPD_PE_SVDM_RequestModeEnter(uint8_t PortNum, USBPD_SOPType_TypeDef SOPType, uint16_t SVID,
+                                                   uint8_t ModeIndex);
 
 /**
   * @brief  Called by DPM to request the PE to perform a VDM mode exit.
@@ -826,7 +985,8 @@ USBPD_StatusTypeDef USBPD_PE_SVDM_RequestModeEnter(uint8_t PortNum, USBPD_SOPTyp
   * @param  ModeIndex Index of the mode to be exit
   * @retval USBPD status: @ref USBPD_BUSY, @ref USBPD_OK, @ref USBPD_FAIL
   */
-USBPD_StatusTypeDef USBPD_PE_SVDM_RequestModeExit(uint8_t PortNum, USBPD_SOPType_TypeDef SOPType, uint16_t SVID, uint8_t ModeIndex);
+USBPD_StatusTypeDef USBPD_PE_SVDM_RequestModeExit(uint8_t PortNum, USBPD_SOPType_TypeDef SOPType, uint16_t SVID,
+                                                  uint8_t ModeIndex);
 
 /**
   * @brief  Called by DPM to request the PE to send a specific SVDM message.
@@ -836,7 +996,8 @@ USBPD_StatusTypeDef USBPD_PE_SVDM_RequestModeExit(uint8_t PortNum, USBPD_SOPType
   * @param  SVID    Used SVID
   * @retval USBPD status: @ref USBPD_BUSY, @ref USBPD_OK, @ref USBPD_FAIL
   */
-USBPD_StatusTypeDef USBPD_PE_SVDM_RequestSpecific(uint8_t PortNum, USBPD_SOPType_TypeDef SOPType, USBPD_VDM_Command_Typedef Command, uint16_t SVID);
+USBPD_StatusTypeDef USBPD_PE_SVDM_RequestSpecific(uint8_t PortNum, USBPD_SOPType_TypeDef SOPType,
+                                                  USBPD_VDM_Command_Typedef Command, uint16_t SVID);
 #endif /* USBPDCORE_SVDM || USBPDCORE_VCONN_SUPPORT */
 
 #if defined(USBPDCORE_SVDM)
@@ -912,7 +1073,7 @@ void USBPD_PRL_TimerCounter(uint8_t PortNum);
   * @{
   */
 
-/** @defgroup USBPD_CORE_TCPM_Exported_Functions_Grp1 USBPD CORE TCPM Exported Functions to applications (DPM and PWR_IF)
+/** @defgroup USBPD_CORE_TCPM_Exported_Functions_Grp1 USBPD CORE TCPM Exported Functions to DPM and PWR_IF applications
   * @{
   */
 
@@ -925,7 +1086,8 @@ void USBPD_PRL_TimerCounter(uint8_t PortNum);
   * @param  TCPC_Driver       Pointer on TCPC drivers based on @ref TCPC_DrvTypeDef
   * @retval USBPD status
   */
-USBPD_StatusTypeDef  USBPD_TCPM_HWInit(uint8_t PortNum, uint8_t TCPC_ToggleRole, USBPD_ParamsTypeDef *Params, USBPD_CAD_Callbacks *CallbackFunctions, TCPC_DrvTypeDef *TCPC_Driver);
+USBPD_StatusTypeDef  USBPD_TCPM_HWInit(uint8_t PortNum, uint8_t TCPC_ToggleRole, USBPD_ParamsTypeDef *Params,
+                                       USBPD_CAD_Callbacks *CallbackFunctions, TCPC_DrvTypeDef *TCPC_Driver);
 
 /**
   * @brief  Set CC line for PD connection
@@ -991,6 +1153,13 @@ USBPD_StatusTypeDef  USBPD_TCPM_VBUS_IsVsafe5V(uint32_t PortNum);
 USBPD_StatusTypeDef  USBPD_TCPM_alert(uint32_t Event);
 
 /**
+  * @brief  Force type C state machine to enter recovery state
+  * @param  PortNum Index of current used port
+  * @retval USBPD status
+  */
+USBPD_StatusTypeDef   USBPD_TCPM_EnterErrorRecovery(uint32_t PortNum);
+
+/**
   * @}
   */
 
@@ -1015,6 +1184,5 @@ USBPD_StatusTypeDef  USBPD_TCPM_alert(uint32_t Event);
 }
 #endif
 
-#endif /* __USBPD_CORE_H_ */
+#endif /* USBPD_CORE_H_ */
 
-/************************ (C) COPYRIGHT STMicroelectronics *****END OF FILE****/
