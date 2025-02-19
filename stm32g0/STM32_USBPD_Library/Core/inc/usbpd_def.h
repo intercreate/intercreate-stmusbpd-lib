@@ -70,7 +70,9 @@ extern "C" {
 #define USBPD_IS_VALID_VOLTAGE(__MV__, __MAXMV__, __MINMV__) ((((__MV__) <= (__MAXMV__))\
                                                                && ((__MV__) >= (__MINMV__)))? 1U: 0U)
 
+#if 0
 #define DIV_ROUND_UP(x, y) (((x) + ((y) - 1u)) / (y))
+#endif
 #define MV2ADC(__X__)           ( (__X__*4095) / 3300 )
 #define ADC2MV(__X__)           ( (__X__*3300) / 4095 )
 
