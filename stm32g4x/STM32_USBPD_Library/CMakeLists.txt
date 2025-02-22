@@ -31,19 +31,10 @@ zephyr_library_sources(
 	Core/src/usbpd_dpm_core.c
 	)
 
-set(stm_socs
-	stm32g4x
-	stm32g0x
-	)
-
-foreach(stm_soc ${stm_socs})
-    string(TOUPPER ${stm_soc} SOC_TO_UPPER)
-	if(CONFIG_SOC_SERIES_${SOC_TO_UPPER})
-		zephyr_library_include_directories(Devices/${SOC_TO_UPPER}X/inc)
-		zephyr_include_directories(Devices/${SOC_TO_UPPER}X/inc)
-		add_subdirectory(Devices/${SOC_TO_UPPER}X/src)
-	endif()
-endforeach()
+string(TOUPPER ${CONFIG_SOC_SERIES} SOC_TO_UPPER)
+zephyr_library_include_directories(Devices/${SOC_TO_UPPER}X/inc)
+zephyr_include_directories(Devices/${SOC_TO_UPPER}X/inc)
+add_subdirectory(Devices/${SOC_TO_UPPER}X/src)
 
 
 # STM USB PD libraries for G4 has iar symbols. Add this to hide the warning
